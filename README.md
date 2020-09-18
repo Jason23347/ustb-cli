@@ -61,4 +61,4 @@ This project is under MIT licence.
 # TODOs
 
 - [ ] colorize output
-- [ ] parse commands more flexibly
+- [x] parse commands more flexibly

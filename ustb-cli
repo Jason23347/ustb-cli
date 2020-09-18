@@ -14,14 +14,15 @@ _ustb_command() {
 	command=$1
 	shift
 
-	case $command in
-	help | version | info | fee | whoami | login)
-		ustb_$command
-		;;
-	*)
+	# check if command exisists
+	type -t "ustb_$command" >/dev/null
+	[ $? -ne 0 ] && {
+		[ "$command" == "exit" ] && exit 0
 		echo "$SCRIPTNAME: '$command' is not a command. See '$SCRIPTNAME help'."
-		;;
-	esac
+		return 1
+	}
+	# excute
+	ustb_$command
 }
 
 ustb_help() {
@@ -144,4 +145,5 @@ ustb_login() {
 } || {
 	# or excute single command
 	_ustb_command $*
+	exit $?
 }
