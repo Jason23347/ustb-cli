@@ -29,10 +29,11 @@ ustb_help() {
 Usage: $SCRIPTNAME [options] <command>
 Commands:
 login		login to ustb wifi
-whoami		show current logged in user
+whoami		show current user
 fee		show network fees left
 version		show version and authors
 help		show this information
+
 END
 }
 
