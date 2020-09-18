@@ -9,6 +9,7 @@ WIFI_SKIP_LOGIN="USTB-Student USTB-V6"
 
 # Bouncing commands to functions
 _ustb_command() {
+	# ignore empty line
 	[ $# -lt 1 ] && return
 
 	command=$1
@@ -23,6 +24,11 @@ _ustb_command() {
 	}
 	# excute
 	ustb_$command
+}
+
+# Capture exit
+_ustb_bye() {
+	printf "Bye-bye.\n"
 }
 
 ustb_help() {
@@ -113,7 +119,7 @@ ustb_login() {
 	ESSID=$(/sbin/iwconfig 2>/dev/null | grep ESSID | awk '{print $4}' |
 		sed 's/ESSID://;s/"//g')
 	grep $ESSID 2>&1 1>/dev/null <<<$WIFI_SKIP_LOGIN && {
-		echo "warn: Already auto logged in to $ESSID."
+		echo "warn: Auto logged in to $ESSID."
 		# return
 	}
 
@@ -139,6 +145,8 @@ ustb_login() {
 
 # Run in cli mode if no arguments,
 [ $# -lt 1 ] && {
+	trap _ustb_bye 0
+
 	while read -ep "ustb> " line; do
 		_ustb_command $line
 	done
