@@ -97,14 +97,14 @@ INFO
 ustb_fee() {
 	local amount=$(curl -s $LOGIN_HOST | grep 'fee=' |
 		sed "s/.*fee='//;s/[[:space:]].*//")
-	printf "Money left: ￥"
-	bc <<<"scale=2;$amount/10000"
+	printf "Money left: ￥%s\n" \
+		$(echo "scale=2;$amount/10000" | bc)
 }
 
 ustb_whoami() {
-	printf "Current user: "
-	curl -s $LOGIN_HOST | grep ';uid' |
-		iconv -f GBK -t UTF-8 | sed "s/.*uid='//;s/';.*//"
+	printf "Current user: %s\n" \
+		$(curl -s $LOGIN_HOST | grep ';uid' |
+			iconv -f GBK -t UTF-8 | sed "s/.*uid='//;s/';.*//")
 }
 
 ustb_login() {
@@ -112,7 +112,7 @@ ustb_login() {
 	ESSID=$(/sbin/iwconfig 2>/dev/null | grep ESSID | awk '{print $4}' |
 		sed 's/ESSID://;s/"//g')
 	grep $ESSID 2>&1 1>/dev/null <<<$WIFI_SKIP_LOGIN && {
-		echo "warn: Auto logged in to $ESSID."
+		echo "warn: Already auto logged in to $ESSID."
 		# return
 	}
 
@@ -124,15 +124,16 @@ ustb_login() {
 
 	# Fetch IPV6 address
 	[[ "$has_v6" =~ (y|Y) ]] && {
-		echo "fetching IPV6 address..."
+		printf "\nfetching IPV6 address..."
 		ip_addr=$(curl -s cippv6.ustb.edu.cn/get_ip.php)
+		printf "done.\n"
 	}
 
 	# Do login
 	res=$(curl -s --retry 3 \
 		-d "DDDDD=$USERNAME&upass=$PASSWORD&0MKKey=123456789&v6ip=$ip_addr" \
 		"$HOST" | grep "You have successfully logged into our system")
-	echo "Login finished."
+	echo "Login succeeded."
 }
 
 # Run in cli mode if no arguments,
