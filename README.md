@@ -60,5 +60,5 @@ This project is under MIT licence.
 
 # TODOs
 
-- [ ] colorize output
+- [x] colorize output
 - [x] parse commands more flexibly

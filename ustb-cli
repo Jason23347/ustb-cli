@@ -31,6 +31,19 @@ _ustb_bye() {
 	printf "Bye-bye.\n"
 }
 
+_ustb_flow() {
+	local flow=$1
+	if [ $(echo "$flow / 1024 < 1" | bc) -eq 1 ]; then
+		printf "%s KB" $flow
+	elif [ $(echo "$flow / 1024^2 < 1" | bc) -eq 1 ]; then
+		printf "%s MB" $(echo "scale=2; $flow / 1024" | bc)
+	elif [ $(echo "$flow / 1024^2 < 9000" | bc) -eq 1 ]; then
+		printf "%s GB" $(echo "scale=2; $flow / 1024^2" | bc)
+	elif [ $(echo "$flow / 1024^3 > 1" | bc) -eq 1 ]; then
+		printf "%s TB" $(echo "scale=2; $flow / 1024^3" | bc)
+	fi
+}
+
 ustb_help() {
 	cat <<END
 Usage: $SCRIPTNAME [options] <command>
@@ -77,10 +90,11 @@ ustb_info() {
 	# IPV6 upload flow
 	local flow_v6=$(echo "$res" | grep "v6af=" | sed "s/.*v6af=//;s/;.*//")/4
 
+	printf "\033[34mIPV4\033[0m\n"
 	cat <<INFO
-IP (V4):	$(echo "$res" | grep "v4ip=" | sed "s/.*v4ip='//;s/'.*//")
-Flow (V4):	$(echo "scale=2; $flow / 1024" | bc) MB
-Flow cost:	￥$(echo "scale=2; $flow / (1024 ^ 2) / 1.5" | bc)
+IP address:	$(echo "$res" | grep "v4ip=" | sed "s/.*v4ip='//;s/'.*//")
+Flow:		$(_ustb_flow $flow)
+Cost:		￥$(echo "scale=2; $flow / (1024 ^ 2) / 1.5" | bc)
 
 INFO
 
@@ -92,20 +106,35 @@ INFO
 		return 0
 	}
 
+	printf "\033[32mIPV6\033[0m\n"
 	cat <<INFO
-IP (V6):	$(echo "$res" | grep "v6ip=" | sed "s/.*v6ip='//;s/'.*//")
-Flow (V6):	$(echo "scale=2; $flow_v6 / 1024" | bc) MB
+IP address:	$(echo "$res" | grep "v6ip=" | sed "s/.*v6ip='//;s/'.*//")
+Flow:		$(_ustb_flow $flow_v6)
 
-FSR (%):	$(echo "scale=2; $flow_v6 / ($flow_v6 + $flow)" | bc)
+Flow Saving rate (%):	$(echo "scale=2; $flow_v6 / ($flow_v6 + $flow)" | bc)
 
 INFO
 }
 
 ustb_fee() {
-	local amount=$(curl -s $LOGIN_HOST | grep 'fee=' |
+	local COLOR="\033[0m"
+	local fee=$(curl -s $LOGIN_HOST | grep 'fee=' |
 		sed "s/.*fee='//;s/[[:space:]].*//")
-	printf "Money left: ￥%s\n" \
-		$(echo "scale=2;$amount/10000" | bc)
+	fee=$(echo "scale=2;$fee/10000" | bc)
+
+	# set color
+	if [ $(bc <<<"$fee > 30") -eq 1 ]; then
+		COLOR="\033[32m"
+	elif [ $(bc <<<"$fee > 10") -eq 1 ]; then
+		COLOR="\033[34m"
+	elif [ $(bc <<<"$fee > 3") -eq 1 ]; then
+		COLOR="\033[33m"
+	elif [ $(bc <<<"$fee > 1") -eq 1 ]; then
+		COLOR="\033[31m"
+	fi
+
+	printf "Money left: $COLOR￥%s\033[0m\n" \
+		$fee
 }
 
 ustb_whoami() {
