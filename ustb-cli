@@ -15,7 +15,7 @@ _ustb_command() {
 	shift
 
 	case $command in
-	help | version | fee | whoami | login)
+	help | version | info | fee | whoami | login)
 		ustb_$command
 		;;
 	*)
@@ -31,6 +31,7 @@ Commands:
 login		login to ustb wifi
 whoami		show current user
 fee		show network fees left
+info		show further flow infomation
 version		show version and authors
 help		show this information
 
@@ -41,6 +42,55 @@ ustb_version() {
 	cat <<INFO
 $SCRIPTNAME $VERSION - A utility script for USTB web.
 Copyright 2020		Shuaicheng Zhu <jason23347@gmail.com>
+
+INFO
+}
+
+ustb_info() {
+	local v4_only=0
+
+	# fetch login page info
+	local res=$(curl -s $LOGIN_HOST | iconv -f GBK -t UTF-8)
+
+	# LOGIN check
+	echo "$res" | grep "flow=" 2>&1 >/dev/null
+	[ $? -ne 0 ] && {
+		echo "Login required."
+		return 1
+	}
+
+	# IPV6 check
+	v46m=$(echo "$res" | grep ";v46m=" | sed "s/.*v46m=//;s/;.*//")
+	[ $v46m -eq 4 ] || [ $v46m -eq 12 ] || v4_only=1
+
+	# IPV4 flow
+	local flow=$(echo "$res" | grep "flow=" | sed "s/.*flow='//;s/[[:space:]].*//")
+	# IPV4 fee
+	local fee=$(echo "$res" | grep "fee=" | sed "s/.*fee='//;s/[[:space:]].*//")
+	# IPV6 upload flow
+	local flow_v6=$(echo "$res" | grep "v6af=" | sed "s/.*v6af=//;s/;.*//")/4
+
+	cat <<INFO
+IP (V4):	$(echo "$res" | grep "v4ip=" | sed "s/.*v4ip='//;s/'.*//")
+Flow (V4):	$(echo "scale=2; $flow / 1024" | bc) MB
+Flow cost:	￥$(echo "scale=2; $flow / (1024 ^ 2) / 1.5" | bc)
+
+INFO
+
+	[ $v4_only -eq 1 ] && {
+		cat <<INFO
+IPV6 not found.
+
+INFO
+		return 0
+	}
+
+	cat <<INFO
+IP (V6):	$(echo "$res" | grep "v6ip=" | sed "s/.*v6ip='//;s/'.*//")
+Flow (V6):	$(echo "scale=2; $flow_v6 / 1024" | bc) MB
+
+FSR (%):	$(echo "scale=2; $flow_v6 / ($flow_v6 + $flow)" | bc)
+
 INFO
 }
 
