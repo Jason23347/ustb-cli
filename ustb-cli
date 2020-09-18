@@ -1,0 +1,95 @@
+#!/bin/bash
+
+SCRIPTNAME=${0##*/}
+VERSION=v1.0
+
+LOGIN_HOST=202.204.48.82
+ALWAYS_ATTEMPT_IPV6=1
+WIFI_SKIP_LOGIN="USTB-Student USTB-V6"
+
+# Bouncing commands to functions
+_ustb_command() {
+	[ $# -lt 1 ] && return
+
+	command=$1
+	shift
+
+	case $command in
+	help | version | fee | whoami | login)
+		ustb_$command
+		;;
+	*)
+		echo "$SCRIPTNAME: '$command' is not a command. See '$SCRIPTNAME help'."
+		;;
+	esac
+}
+
+ustb_help() {
+	cat <<END
+Usage: $SCRIPTNAME [options] <command>
+Commands:
+login		login to ustb wifi
+whoami		show current logged in user
+fee		show network fees left
+version		show version and authors
+help		show this information
+END
+}
+
+ustb_version() {
+	cat <<INFO
+$SCRIPTNAME $VERSION - A utility script for USTB web.
+Copyright 2020		Shuaicheng Zhu <jason23347@gmail.com>
+INFO
+}
+
+ustb_fee() {
+	local amount=$(curl -s $LOGIN_HOST | grep 'fee=' |
+		sed "s/.*fee='//;s/[[:space:]].*//")
+	printf "Money left: ￥"
+	bc <<<"scale=2;$amount/10000"
+}
+
+ustb_whoami() {
+	printf "Current user: "
+	curl -s $LOGIN_HOST | grep ';uid' |
+		iconv -f GBK -t UTF-8 | sed "s/.*uid='//;s/';.*//"
+}
+
+ustb_login() {
+	# Check ESSID
+	ESSID=$(/sbin/iwconfig 2>/dev/null | grep ESSID | awk '{print $4}' |
+		sed 's/ESSID://;s/"//g')
+	grep $ESSID 2>&1 1>/dev/null <<<$WIFI_SKIP_LOGIN && {
+		echo "warn: Auto logged in to $ESSID."
+		# return
+	}
+
+	# Input user info
+	read -ep "Username: " Username
+	read -sep "Passeord: " password
+	[ $ALWAYS_ATTEMPT_IPV6 -gt 0 ] && has_v6=y ||
+		read -n1 -ep "Enable IPV6 address?[y/N]" has_v6
+
+	# Fetch IPV6 address
+	[[ "$has_v6" =~ (y|Y) ]] && {
+		echo "fetching IPV6 address..."
+		ip_addr=$(curl -s cippv6.ustb.edu.cn/get_ip.php)
+	}
+
+	# Do login
+	res=$(curl -s --retry 3 \
+		-d "DDDDD=$USERNAME&upass=$PASSWORD&0MKKey=123456789&v6ip=$ip_addr" \
+		"$HOST" | grep "You have successfully logged into our system")
+	echo "Login finished."
+}
+
+# Run in cli mode if no arguments,
+[ $# -lt 1 ] && {
+	while read -ep "ustb> " line; do
+		_ustb_command $line
+	done
+} || {
+	# or excute single command
+	_ustb_command $*
+}
