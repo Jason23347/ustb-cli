@@ -84,17 +84,21 @@ ustb_info() {
 	[ $v46m -eq 4 ] || [ $v46m -eq 12 ] || v4_only=1
 
 	# IPV4 flow
-	local flow=$(echo "$res" | grep "flow=" | sed "s/.*flow='//;s/[[:space:]].*//")
+	local flow=$(echo "$res" | grep "flow=" |
+		sed "s/.*flow='//;s/[[:space:]].*//")
+
 	# IPV4 fee
-	local fee=$(echo "$res" | grep "fee=" | sed "s/.*fee='//;s/[[:space:]].*//")
+	local fee=$(echo "$res" | grep "fee=" |
+		sed "s/.*fee='//;s/[[:space:]].*//")
+
 	# IPV6 upload flow
-	local flow_v6=$(echo "$res" | grep "v6af=" | sed "s/.*v6af=//;s/;.*//")/4
+	local flow_v6=$(echo "$res" | grep "v6af=" |
+		sed "s/.*v6af=//;s/;.*//")/4
 
 	printf "\033[34mIPV4\033[0m\n"
 	cat <<INFO
 IP address:	$(echo "$res" | grep "v4ip=" | sed "s/.*v4ip='//;s/'.*//")
 Flow:		$(_ustb_flow $flow)
-Cost:		￥$(echo "scale=2; $flow / (1024 ^ 2) / 1.5" | bc)
 
 INFO
 
@@ -117,8 +121,10 @@ INFO
 }
 
 ustb_fee() {
+	local res=$(curl -s $LOGIN_HOST)
+
 	local COLOR="\033[0m"
-	local fee=$(curl -s $LOGIN_HOST | grep 'fee=' |
+	local fee=$(echo "$res" | grep 'fee=' |
 		sed "s/.*fee='//;s/[[:space:]].*//")
 	fee=$(echo "scale=2;$fee/10000" | bc)
 
@@ -133,8 +139,13 @@ ustb_fee() {
 		COLOR="\033[31m"
 	fi
 
-	printf "Money left: $COLOR￥%s\033[0m\n" \
-		$fee
+	# IPV4 flow
+	local flow=$(echo "$res" | grep "flow=" |
+		sed "s/.*flow='//;s/[[:space:]].*//")
+	local cost=$(echo "scale=2; $flow / (1024 ^ 2) / 1.5" | bc)
+
+	printf "Money Cost: $COLOR￥%s\033[0m\n" $cost
+	printf "Money left: $COLOR￥%s\033[0m\n\n" $fee
 }
 
 ustb_whoami() {
