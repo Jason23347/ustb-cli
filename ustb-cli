@@ -49,7 +49,8 @@ ustb_help() {
 	cat <<END
 Usage: $SCRIPTNAME [options] <command>
 Commands:
-login		login to ustb wifi
+login		login to USTB web
+logout		logout of USTB web
 whoami		show current user
 fee		show network fees left
 info		show further flow infomation
@@ -196,6 +197,15 @@ ustb_login() {
 		-d "DDDDD=$username&upass=$password&0MKKey=123456789&v6ip=$ip_addr" \
 		"$LOGIN_HOST" | grep "You have successfully logged into our system")
 	echo "Login succeeded."
+}
+
+ustb_logout() {
+	curl -s "$LOGIN_HOST/F.htm" >/dev/null
+	if [ $? -eq 0 ]; then
+		echo "Logout succeed."
+	else
+		echo "Logout failed."
+	fi
 }
 
 # Run in cli mode if no arguments,

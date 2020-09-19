@@ -13,12 +13,13 @@ ustb-cli
 ustb> help
 Usage: ustb-cli [options] <command>
 Commands:
-login           login to ustb wifi
-whoami          show current user
-fee             show network fees left
-info            show further flow infomation
-version         show version and authors
-help            show this information
+login		login to USTB web
+logout		logout of USTB web
+whoami		show current user
+fee		show network fees left
+info		show further flow infomation
+version		show version and authors
+help		show this information
 
 ustb>
 ```
