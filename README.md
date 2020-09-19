@@ -27,9 +27,13 @@ Also, you can change the default settings at the beggining of the file:
 ```bash
 # Or 202.204.48.66, login.ustb.edu.cn.
 LOGIN_HOST=202.204.48.82
-# 1 or 0, then you need to confim to
-# get ipv6 address when login.
+# 0 or 1, set to 0 if you want to get a
+# confim message while getting ipv6
+# address when login.
 ALWAYS_ATTEMPT_IPV6=1
+# 0 or 1, set to 0 if you want to input
+# username for each login attempt
+ALWAYS_USE_DEFAULT_USER=1
 # a list of Wi-Fi ESSIDs, and you don't want to
 # do login check when connected to one of these.
 WIFI_SKIP_LOGIN="USTB-Student USTB-V6"
