@@ -153,7 +153,7 @@ ustb_login() {
 	}
 
 	# Input user info
-	read -ep "Username: " Username
+	read -ep "Username: " username
 	read -sep "Passeord: " password
 	[ $ALWAYS_ATTEMPT_IPV6 -gt 0 ] && has_v6=y ||
 		read -n1 -ep "Enable IPV6 address?[y/N]" has_v6
@@ -161,14 +161,16 @@ ustb_login() {
 	# Fetch IPV6 address
 	[[ "$has_v6" =~ (y|Y) ]] && {
 		printf "\nfetching IPV6 address..."
-		ip_addr=$(curl -s cippv6.ustb.edu.cn/get_ip.php)
-		printf "done.\n"
+		ip_addr=$(curl -s cippv6.ustb.edu.cn/get_ip.php |
+			grep "gIpV6Addr" |
+			sed "s/.*= '//;s/';.*//")
+		printf "$ip_addr.\n"
 	}
 
 	# Do login
 	res=$(curl -s --retry 3 \
-		-d "DDDDD=$USERNAME&upass=$PASSWORD&0MKKey=123456789&v6ip=$ip_addr" \
-		"$HOST" | grep "You have successfully logged into our system")
+		-d "DDDDD=$username&upass=$password&0MKKey=123456789&v6ip=$ip_addr" \
+		"$LOGIN_HOST" | grep "You have successfully logged into our system")
 	echo "Login succeeded."
 }
 
