@@ -231,6 +231,7 @@ ustb_logout() {
 ustb_clock() {
 	# refresh screen
 	tput clear
+	tput civis
 
 	while :; do
 		# get tty size
@@ -241,11 +242,19 @@ ustb_clock() {
 		date_string=$(date +"%M %l")
 		_ustb_draw_clock $tty_size $date_string
 		[ $? -ne 0 ] && return 1
-		tput civis
 
 		sleep 0.1
 	done
 }
+
+_ustb_reset_tty_size() {
+	sleep 0.2
+	tput clear
+	tty_size=$(stty size)
+	unset dots second
+}
+
+trap _ustb_reset_tty_size SIGWINCH
 
 _ustb_draw_clock() {
 	local -i tty_height=$1
