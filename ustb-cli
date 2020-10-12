@@ -246,11 +246,11 @@ ustb_clock() {
 }
 
 _ustb_draw_clock() {
-	local tty_height=$1
-	local tty_width=$2
+	local -i tty_height=$1
+	local -i tty_width=$2
 
-	local -i minute=$3
-	local -i hour=$4
+	local -i minute=$(echo $3 | sed 's/^0//')
+	local -i hour=$(echo $4 | sed 's/^0//')
 
 	# calc positions
 	# width:
