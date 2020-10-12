@@ -9,6 +9,7 @@ ALWAYS_USE_DEFAULT_USER=1
 WIFI_SKIP_LOGIN="USTB-Student USTB-V6"
 
 CLOCK_FORCE_UPDATE=1
+CLOCK_DATE_FORMAT="%a %b %d %p"
 
 # Bouncing commands to functions
 _ustb_command() {
@@ -366,7 +367,7 @@ _ustb_draw_info() {
 
 _ustb_draw_date() {
 	# Format: Mon Oct 12 PM
-	local str=$(date +"%a %b %d %p")
+	local str=$(date +"$CLOCK_DATE_FORMAT")
 	local len=${#str}
 	local padding_x=$((($1 - $len) / 2))
 	tput sc
