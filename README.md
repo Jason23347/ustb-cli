@@ -47,7 +47,7 @@ git clone https://github.com/Jason23347/ustb-cli.git
 ```
 then move the script to a path in your global variable `$PATH`, e.g. /usr/bin.
 
-**However**, a personal path (~/bin, ~/.local/bin) is recommended as you can manage your personalized exutables easily. Do the export at the start of your rc file (~/.bashrc, ~/.zshrc, etc.)
+**However**, a personal path (`~/bin`, `~/.local/bin`) is recommended as you can manage your personalized exutables easily. Do the export at the start of your rc file (`~/.bashrc`, `~/.zshrc`, etc.)
 ```bash
 exoprt PATH=/your/path:$PATH
 ```
