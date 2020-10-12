@@ -30,11 +30,10 @@ _ustb_command() {
 	ustb_$command
 }
 
-# Capture exit
+# Handle exit
 _ustb_bye() {
 	printf "Bye-bye.\n"
 	tput cnorm
-	clear
 }
 
 _ustb_flow() {
@@ -247,8 +246,8 @@ ustb_clock() {
 
 		read -t 0.1 -n1 ch
 		[ "$ch" == "q" ] && {
-			tput cnorm
 			clear
+			tput cnorm
 			return 0
 		}
 	done
@@ -283,6 +282,9 @@ _ustb_draw_clock() {
 		echo "Error: Minimum tty size 16x40 required" >&2
 		return 1
 	}
+
+	# Initialize cursor position
+	tput cup 0 0
 
 	[ -v dots ] || {
 		_ustb_draw_dots $(($padding_x + 18)) $padding_y
@@ -381,6 +383,8 @@ _ustb_draw_info() {
 		printf " "
 	done
 	printf "$COLOR_FEE%s\033[0m" "$fee"
+
+	tput rc
 }
 
 _ustb_draw_date() {
@@ -391,6 +395,8 @@ _ustb_draw_date() {
 	tput sc
 	tput cup $2 $padding_x
 	printf "%s" "$str"
+
+	tput rc
 }
 
 EMPTY=" "
@@ -408,6 +414,8 @@ _ustb_draw_dots() {
 	y+=4
 	tput cup $y $x
 	printf "$POINT"
+
+	tput rc
 }
 
 _ustb_draw_digit_0() {
@@ -426,6 +434,8 @@ _ustb_draw_digit_0() {
 	y+=2
 	tput cup $y $x
 	printf "$POINT $POINT $POINT"
+
+	tput rc
 }
 
 _ustb_draw_digit_1() {
@@ -439,6 +449,8 @@ _ustb_draw_digit_1() {
 		printf "$EMPTY $POINT $EMPTY"
 		y+=2
 	done
+
+	tput rc
 }
 
 _ustb_draw_digit_2() {
@@ -465,6 +477,8 @@ _ustb_draw_digit_2() {
 	y+=2
 	tput cup $y $x
 	printf "$POINT $POINT $POINT"
+
+	tput rc
 }
 
 _ustb_draw_digit_3() {
@@ -488,6 +502,8 @@ _ustb_draw_digit_3() {
 		tput cup $y $x
 		printf "$POINT $POINT $POINT"
 	done
+
+	tput rc
 }
 
 _ustb_draw_digit_4() {
@@ -514,6 +530,8 @@ _ustb_draw_digit_4() {
 	y+=2
 	tput cup $y $x
 	printf "$EMPTY $EMPTY $POINT"
+
+	tput rc
 }
 
 _ustb_draw_digit_5() {
@@ -540,6 +558,8 @@ _ustb_draw_digit_5() {
 	y+=2
 	tput cup $y $x
 	printf "$POINT $POINT $POINT"
+
+	tput rc
 }
 
 _ustb_draw_digit_6() {
@@ -566,6 +586,8 @@ _ustb_draw_digit_6() {
 	y+=2
 	tput cup $y $x
 	printf "$POINT $POINT $POINT"
+
+	tput rc
 }
 
 _ustb_draw_digit_7() {
@@ -586,6 +608,8 @@ _ustb_draw_digit_7() {
 		tput cup $y $x
 		printf "$EMPTY $EMPTY $POINT"
 	done
+
+	tput rc
 }
 
 _ustb_draw_digit_8() {
@@ -609,6 +633,8 @@ _ustb_draw_digit_8() {
 		tput cup $y $x
 		printf "$POINT $POINT $POINT"
 	done
+
+	tput rc
 }
 
 _ustb_draw_digit_9() {
@@ -640,6 +666,7 @@ _ustb_draw_digit_9() {
 	tput cup $y $x
 	printf "$EMPTY $EMPTY $POINT"
 
+	tput rc
 }
 
 # handle exit
