@@ -8,8 +8,13 @@ ALWAYS_ATTEMPT_IPV6=1
 ALWAYS_USE_DEFAULT_USER=1
 WIFI_SKIP_LOGIN="USTB-Student USTB-V6"
 
+CLOCK_COLOR="\033[46m"
 CLOCK_FORCE_UPDATE=1
 CLOCK_DATE_FORMAT="%a %b %d %p"
+# Width of a digit dot
+CLOCK_WIDTH=2
+# space between the digits
+CLOCK_SPACE=3
 
 # Bouncing commands to functions
 _ustb_command() {
@@ -234,6 +239,21 @@ ustb_clock() {
 	# make cursor invisible
 	tput civis
 
+	# Digit variables
+	EMPTY=
+	for ((i = 0; i < $CLOCK_WIDTH; i++)); do
+		EMPTY+=" "
+	done
+	POINT="${CLOCK_COLOR}$EMPTY\033[0m"
+
+	CLOCK_BLOCK=$((2 + 3 * $CLOCK_WIDTH))
+
+	# Padding variables
+	[ -v CLOCK_GAP ] ||
+		declare -i CLOCK_GAP=$CLOCK_BLOCK+$CLOCK_SPACE
+	[ -v CLOCK_DOTS_OFFSET ] ||
+		declare -i CLOCK_DOTS_OFFSET=$CLOCK_SPACE/3
+
 	while :; do
 		# get tty size
 		# array, 0: height, 1: length
@@ -271,15 +291,14 @@ _ustb_draw_clock() {
 	local -i hour=$(echo $4 | sed 's/^0//')
 
 	# Calculate positions
-	# width x height:
-	# 4 spaces between digits, 4x4
-	# 4 digits, 4x5
-	# 1 dots, 1x3
-	padding_x=$((($tty_width - 39) / 2))
-	padding_y=$((($tty_height - 16) / 2))
+	min_width=$((5 * CLOCK_BLOCK + 4 * CLOCK_SPACE - 2 * $CLOCK_DOTS_OFFSET))
+	# height: 10 (clock) + 2 (date) + 4 (flow info)
+	min_height=16
+	padding_x=$((($tty_width - $min_width) / 2))
+	padding_y=$((($tty_height - $min_height) / 2))
 
 	[ $padding_x -lt 0 ] || [ $padding_y -lt 0 ] && {
-		echo "Error: Minimum tty size 16x40 required" >&2
+		echo "Error: Minimum tty size ${min_height}x${min_width} required" >&2
 		return 1
 	}
 
@@ -287,7 +306,9 @@ _ustb_draw_clock() {
 	tput cup 0 0
 
 	[ -v dots ] || {
-		_ustb_draw_dots $(($padding_x + 18)) $padding_y
+		_ustb_draw_dots \
+			$(($padding_x + 2 * $CLOCK_GAP - $CLOCK_DOTS_OFFSET)) \
+			$padding_y
 		dots=true
 	}
 
@@ -296,43 +317,61 @@ _ustb_draw_clock() {
 		return
 
 	min_0=$(($minute % 10))
-	_ustb_draw_digit_${min_0} $(($padding_x + 34)) $padding_y
-
-	# update every minute
-	[ ${second:-0} -eq 0 ] &&
-		_ustb_draw_info $tty_width $(($padding_y + 12))
-	second=$(date +%S | sed 's/^0//')
+	_ustb_draw_digit_${min_0} \
+		$(($padding_x + 4 * $CLOCK_GAP - 2 * $CLOCK_DOTS_OFFSET)) \
+		$padding_y
 
 	[ $CLOCK_FORCE_UPDATE -eq 0 ] &&
 		[ ${min_1:--1} -eq $(($minute - $min_0)) ] &&
 		return
 
 	min_1=$((($minute - $min_0) / 10))
-	_ustb_draw_digit_${min_1} $(($padding_x + 25)) $padding_y
+	_ustb_draw_digit_${min_1} \
+		$(($padding_x + 3 * $CLOCK_GAP - 2 * $CLOCK_DOTS_OFFSET)) \
+		$padding_y
 
 	[ $CLOCK_FORCE_UPDATE -eq 0 ] &&
 		[ ${hour_0:--1} -eq $(($hour % 10)) ] &&
 		return
 
 	hour_0=$(($hour % 10))
-	_ustb_draw_digit_${hour_0} $(($padding_x + 9)) $padding_y
+	_ustb_draw_digit_${hour_0} \
+		$(($padding_x + 1 * $CLOCK_GAP)) \
+		$padding_y
 
 	[ $CLOCK_FORCE_UPDATE -eq 0 ] &&
 		[ ${hour_1:--1} -eq $(($hour - $hour_0)) ] &&
 		return
 
 	hour_1=$((($hour - $hour_0) / 10))
-	_ustb_draw_digit_${hour_1} $padding_x $padding_y
+	_ustb_draw_digit_${hour_1} \
+		$padding_x \
+		$padding_y
 
 	_ustb_draw_date $tty_width $(($padding_y + 10))
+
+	# update every minute
+	[ ${second:-0} -eq 0 ] &&
+		_ustb_draw_info $tty_width $(($padding_y + 12))
+	second=$(date +%S | sed 's/^0//')
 }
 
 _ustb_draw_info() {
-	local len
+	local len padding_x
 	local res=$(curl -s $LOGIN_HOST)
 
-	local padding_x=$((($1 - 27) / 2))
 	tput sc
+
+	[ "$res" == "" ] && {
+		local str="Couldn't connect to server"
+		len=${#str}
+		padding_x=$((($1 - $len) / 2))
+		tput cup $2 $padding_x
+		printf "\033[31m%s\033[0m" "$str"
+		return 0
+	}
+
+	padding_x=$((($1 - 27) / 2))
 
 	# IPV4 flow
 	local flow=$(echo "$res" | grep "flow=" |
@@ -399,15 +438,12 @@ _ustb_draw_date() {
 	tput rc
 }
 
-EMPTY=" "
-POINT="\033[46m \033[0m"
-
 _ustb_draw_dots() {
 	local -i x=$1
 	local -i y=$2
 	tput sc
 
-	x+=1
+	x+=$((($CLOCK_BLOCK - $CLOCK_DOTS_OFFSET - 1) / 2))
 	y+=2
 	tput cup $y $x
 	printf "$POINT"
