@@ -331,7 +331,7 @@ _ustb_draw_info() {
 	printf "%s" "$flow_v6"
 
 	tput cup $(($2 + 2)) $padding_x
-	printf "Fee Cost:"
+	printf "Fee Left:"
 	len=${#fee}
 	for ((i = 0; i < 18 - $len; i++)); do
 		printf " "
