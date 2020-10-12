@@ -389,12 +389,20 @@ _ustb_draw_digit_1() {
 	local -i y=$2
 	tput sc
 
-	x+=2
-	for ((i = 0; i < 5; i++)); do
-		tput cup $y $x
-		printf "$POINT"
-		y+=2
-	done
+	tput cup $y $x
+	printf "$EMPTY $POINT $EMPTY"
+	y+=2
+	tput cup $y $x
+	printf "$EMPTY $POINT $EMPTY"
+	y+=2
+	tput cup $y $x
+	printf "$EMPTY $POINT $EMPTY"
+	y+=2
+	tput cup $y $x
+	printf "$EMPTY $POINT $EMPTY"
+	y+=2
+	tput cup $y $x
+	printf "$EMPTY $POINT $EMPTY"
 }
 
 _ustb_draw_digit_2() {
