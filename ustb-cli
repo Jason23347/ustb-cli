@@ -232,6 +232,7 @@ ustb_logout() {
 ustb_clock() {
 	# refresh screen
 	tput clear
+	# make cursor invisible
 	tput civis
 
 	while :; do
@@ -261,12 +262,13 @@ _ustb_draw_clock() {
 	local -i tty_height=$1
 	local -i tty_width=$2
 
+	# Avoid recognizing '08' as octal number
 	local -i minute=$(echo $3 | sed 's/^0//')
 	local -i hour=$(echo $4 | sed 's/^0//')
 
-	# calc positions
-	# width:
-	# 4 spaces, 4x4
+	# Calculate positions
+	# width x height:
+	# 4 spaces between digits, 4x4
 	# 4 digits, 4x5
 	# 1 dots, 1x3
 	padding_x=$((($tty_width - 39) / 2))
@@ -415,20 +417,12 @@ _ustb_draw_digit_1() {
 	local -i y=$2
 	tput sc
 
-	tput cup $y $x
-	printf "$EMPTY $POINT $EMPTY"
-	y+=2
-	tput cup $y $x
-	printf "$EMPTY $POINT $EMPTY"
-	y+=2
-	tput cup $y $x
-	printf "$EMPTY $POINT $EMPTY"
-	y+=2
-	tput cup $y $x
-	printf "$EMPTY $POINT $EMPTY"
-	y+=2
-	tput cup $y $x
-	printf "$EMPTY $POINT $EMPTY"
+	for ((i = 0; i < 5; i++)); do
+		tput cup $y $x
+		# 0 1 0
+		printf "$EMPTY $POINT $EMPTY"
+		y+=2
+	done
 }
 
 _ustb_draw_digit_2() {
@@ -436,6 +430,11 @@ _ustb_draw_digit_2() {
 	local -i y=$2
 	tput sc
 
+	# 1 1 1
+	# 0 0 1
+	# 1 1 1
+	# 1 0 0
+	# 1 1 1
 	tput cup $y $x
 	printf "$POINT $POINT $POINT"
 	y+=2
@@ -457,20 +456,22 @@ _ustb_draw_digit_3() {
 	local -i y=$2
 	tput sc
 
+	# 1 1 1
+
+	# 0 0 1
+	# 1 1 1
+	# 0 0 1
+	# 1 1 1
 	tput cup $y $x
 	printf "$POINT $POINT $POINT"
-	y+=2
-	tput cup $y $x
-	printf "$EMPTY $EMPTY $POINT"
-	y+=2
-	tput cup $y $x
-	printf "$POINT $POINT $POINT"
-	y+=2
-	tput cup $y $x
-	printf "$EMPTY $EMPTY $POINT"
-	y+=2
-	tput cup $y $x
-	printf "$POINT $POINT $POINT"
+	for ((i = 0; i < 2; i++)); do
+		y+=2
+		tput cup $y $x
+		printf "$EMPTY $EMPTY $POINT"
+		y+=2
+		tput cup $y $x
+		printf "$POINT $POINT $POINT"
+	done
 }
 
 _ustb_draw_digit_4() {
@@ -478,6 +479,11 @@ _ustb_draw_digit_4() {
 	local -i y=$2
 	tput sc
 
+	# 1 0 1
+	# 1 0 1
+	# 1 1 1
+	# 1 0 1
+	# 0 0 1
 	tput cup $y $x
 	printf "$POINT $EMPTY $POINT"
 	y+=2
@@ -499,6 +505,11 @@ _ustb_draw_digit_5() {
 	local -i y=$2
 	tput sc
 
+	# 1 1 1
+	# 1 0 0
+	# 1 1 1
+	# 0 0 1
+	# 1 1 1
 	tput cup $y $x
 	printf "$POINT $POINT $POINT"
 	y+=2
@@ -520,6 +531,11 @@ _ustb_draw_digit_6() {
 	local -i y=$2
 	tput sc
 
+	# 1 1 1
+	# 1 0 0
+	# 1 1 1
+	# 1 0 1
+	# 1 1 1
 	tput cup $y $x
 	printf "$POINT $POINT $POINT"
 	y+=2
@@ -541,20 +557,19 @@ _ustb_draw_digit_7() {
 	local -i y=$2
 	tput sc
 
+	# 1 1 1
+
+	# 0 0 1
+	# 0 0 1
+	# 0 0 1
+	# 0 0 1
 	tput cup $y $x
 	printf "$POINT $POINT $POINT"
-	y+=2
-	tput cup $y $x
-	printf "$EMPTY $EMPTY $POINT"
-	y+=2
-	tput cup $y $x
-	printf "$EMPTY $EMPTY $POINT"
-	y+=2
-	tput cup $y $x
-	printf "$EMPTY $EMPTY $POINT"
-	y+=2
-	tput cup $y $x
-	printf "$EMPTY $EMPTY $POINT"
+	for ((i = 0; i < 4; i++)); do
+		y+=2
+		tput cup $y $x
+		printf "$EMPTY $EMPTY $POINT"
+	done
 }
 
 _ustb_draw_digit_8() {
@@ -562,20 +577,22 @@ _ustb_draw_digit_8() {
 	local -i y=$2
 	tput sc
 
+	# 1 1 1
+
+	# 1 0 1
+	# 1 1 1
+	# 1 0 1
+	# 1 1 1
 	tput cup $y $x
 	printf "$POINT $POINT $POINT"
-	y+=2
-	tput cup $y $x
-	printf "$POINT $EMPTY $POINT"
-	y+=2
-	tput cup $y $x
-	printf "$POINT $POINT $POINT"
-	y+=2
-	tput cup $y $x
-	printf "$POINT $EMPTY $POINT"
-	y+=2
-	tput cup $y $x
-	printf "$POINT $POINT $POINT"
+	for ((i = 0; i < 2; i++)); do
+		y+=2
+		tput cup $y $x
+		printf "$POINT $EMPTY $POINT"
+		y+=2
+		tput cup $y $x
+		printf "$POINT $POINT $POINT"
+	done
 }
 
 _ustb_draw_digit_9() {
@@ -587,6 +604,11 @@ _ustb_draw_digit_9() {
 	local -i y=$2
 	tput sc
 
+	# 1 1 1
+	# 1 0 1
+	# 1 1 1
+	# 0 0 1
+	# 0 0 1
 	tput cup $y $x
 	printf "$POINT $POINT $POINT"
 	y+=2
