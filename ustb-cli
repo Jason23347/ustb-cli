@@ -30,6 +30,8 @@ _ustb_command() {
 # Capture exit
 _ustb_bye() {
 	printf "Bye-bye.\n"
+	tput cnorm
+	clear
 }
 
 _ustb_flow() {
@@ -51,6 +53,7 @@ Usage: $SCRIPTNAME [options] <command>
 Commands:
 login		login to USTB web
 logout		logout of USTB web
+clock		display a clock with flow info
 whoami		show current user
 fee		show network fees left
 info		show further flow infomation
@@ -223,10 +226,355 @@ ustb_logout() {
 	fi
 }
 
+ustb_clock() {
+	# refresh screen
+	tput clear
+
+	while :; do
+		# get tty size
+		# array, 0: height, 1: length
+		tty_size=$(stty size)
+
+		# minute hour
+		date_string=$(date +"%M %l")
+		_ustb_draw_clock $tty_size $date_string
+		[ $? -ne 0 ] && return 1
+		tput civis
+
+		sleep 0.1
+	done
+}
+
+_ustb_draw_clock() {
+	local tty_height=$1
+	local tty_width=$2
+
+	local -i minute=$3
+	local -i hour=$4
+
+	# calc positions
+	# width:
+	# 4 spaces, 4x4
+	# 4 digits, 4x5
+	# 1 dots, 1x3
+	padding_x=$((($tty_width - 39) / 2))
+	padding_y=$((($tty_height - 16) / 2))
+
+	[ $padding_x -lt 0 ] || [ $padding_y -lt 0 ] && {
+		echo "Error: Minimum tty size 16x40 required" >&2
+		return 1
+	}
+
+	[ -v dots ] || {
+		_ustb_draw_dots $(($padding_x + 18)) $padding_y
+		dots=true
+	}
+
+	[ ${min_0:--1} -eq $((${minute/^0//} % 10)) ] && return
+	min_0=$(($minute % 10))
+	_ustb_draw_digit_${min_0} $(($padding_x + 34)) $padding_y
+
+	# update every minute
+	_ustb_draw_info $tty_width $(($padding_y + 12))
+
+	[ ${min_1:--1} -eq $(($minute - $min_0)) ] && return
+	min_1=$((($minute - $min_0) / 10))
+	_ustb_draw_digit_${min_1} $(($padding_x + 25)) $padding_y
+
+	[ ${hour_0:--1} -eq $(($hour % 10)) ] && return
+	hour_0=$(($hour % 10))
+	_ustb_draw_digit_${hour_0} $(($padding_x + 9)) $padding_y
+
+	[ ${hour_1:--1} -eq $(($hour - $hour_0)) ] && return
+	hour_1=$((($hour - $hour_0) / 10))
+	_ustb_draw_digit_${hour_1} $padding_x $padding_y
+
+	_ustb_draw_date $tty_width $(($padding_y + 10))
+}
+
+_ustb_draw_info() {
+	local len
+	local res=$(curl -s $LOGIN_HOST)
+
+	local padding_x=$((($1 - 27) / 2))
+	tput sc
+
+	# IPV4 flow
+	local flow=$(echo "$res" | grep "flow=" |
+		sed "s/.*flow='//;s/[[:space:]].*//")
+	flow=$(_ustb_flow $flow)
+
+	# IPV6 flow
+	local flow_v6=$(echo "$res" | grep "v6af=" |
+		sed "s/.*v6af=//;s/;.*//")/4
+	flow_v6=$(_ustb_flow $flow_v6)
+
+	# fee
+	local fee=$(echo "$res" | grep 'fee=' |
+		sed "s/.*fee='//;s/[[:space:]].*//")
+	fee=$(echo "scale=2;$fee/10000" | bc)
+
+	tput cup $2 $padding_x
+	printf "IPV4 Flow:"
+	len=${#flow}
+	for ((i = 0; i < 17 - $len; i++)); do
+		printf " "
+	done
+	printf "%s" "$flow"
+
+	tput cup $(($2 + 1)) $padding_x
+	printf "IPV6 Flow:"
+	len=${#flow_v6}
+	for ((i = 0; i < 17 - $len; i++)); do
+		printf " "
+	done
+	printf "%s" "$flow_v6"
+
+	tput cup $(($2 + 2)) $padding_x
+	printf "Fee Cost:"
+	len=${#fee}
+	for ((i = 0; i < 18 - $len; i++)); do
+		printf " "
+	done
+	printf "%s" "$fee"
+}
+
+_ustb_draw_date() {
+	# Format: Mon Oct 12 PM
+	local str=$(date +"%a %b %d %p")
+	local len=${#str}
+	local padding_x=$((($1 - $len) / 2))
+	tput sc
+	tput cup $2 $padding_x
+	printf "%s" "$str"
+}
+
+EMPTY=" "
+POINT="\033[47m \033[0m"
+
+_ustb_draw_dots() {
+	local -i x=$1
+	local -i y=$2
+	tput sc
+
+	x+=1
+	y+=2
+	tput cup $y $x
+	printf "$POINT"
+	y+=4
+	tput cup $y $x
+	printf "$POINT"
+}
+
+_ustb_draw_digit_0() {
+	local -i x=$1
+	local -i y=$2
+	tput sc
+
+	tput cup $y $x
+	printf "$POINT $POINT $POINT"
+	for ((i = 0; i < 3; i++)); do
+		y+=2
+		tput cup $y $x
+		printf "$POINT $EMPTY $POINT"
+	done
+
+	y+=2
+	tput cup $y $x
+	printf "$POINT $POINT $POINT"
+}
+
+_ustb_draw_digit_1() {
+	local -i x=$1
+	local -i y=$2
+	tput sc
+
+	x+=2
+	for ((i = 0; i < 5; i++)); do
+		tput cup $y $x
+		printf "$POINT"
+		y+=2
+	done
+}
+
+_ustb_draw_digit_2() {
+	local -i x=$1
+	local -i y=$2
+	tput sc
+
+	tput cup $y $x
+	printf "$POINT $POINT $POINT"
+	y+=2
+	tput cup $y $x
+	printf "$EMPTY $EMPTY $POINT"
+	y+=2
+	tput cup $y $x
+	printf "$POINT $POINT $POINT"
+	y+=2
+	tput cup $y $x
+	printf "$POINT $EMPTY $EMPTY"
+	y+=2
+	tput cup $y $x
+	printf "$POINT $POINT $POINT"
+}
+
+_ustb_draw_digit_3() {
+	local -i x=$1
+	local -i y=$2
+	tput sc
+
+	tput cup $y $x
+	printf "$POINT $POINT $POINT"
+	y+=2
+	tput cup $y $x
+	printf "$EMPTY $EMPTY $POINT"
+	y+=2
+	tput cup $y $x
+	printf "$POINT $POINT $POINT"
+	y+=2
+	tput cup $y $x
+	printf "$EMPTY $EMPTY $POINT"
+	y+=2
+	tput cup $y $x
+	printf "$POINT $POINT $POINT"
+}
+
+_ustb_draw_digit_4() {
+	local -i x=$1
+	local -i y=$2
+	tput sc
+
+	tput cup $y $x
+	printf "$POINT $EMPTY $POINT"
+	y+=2
+	tput cup $y $x
+	printf "$POINT $EMPTY $POINT"
+	y+=2
+	tput cup $y $x
+	printf "$POINT $POINT $POINT"
+	y+=2
+	tput cup $y $x
+	printf "$EMPTY $EMPTY $POINT"
+	y+=2
+	tput cup $y $x
+	printf "$EMPTY $EMPTY $POINT"
+}
+
+_ustb_draw_digit_5() {
+	local -i x=$1
+	local -i y=$2
+	tput sc
+
+	tput cup $y $x
+	printf "$POINT $POINT $POINT"
+	y+=2
+	tput cup $y $x
+	printf "$POINT $EMPTY $EMPTY"
+	y+=2
+	tput cup $y $x
+	printf "$POINT $POINT $POINT"
+	y+=2
+	tput cup $y $x
+	printf "$EMPTY $EMPTY $POINT"
+	y+=2
+	tput cup $y $x
+	printf "$POINT $POINT $POINT"
+}
+
+_ustb_draw_digit_6() {
+	local -i x=$1
+	local -i y=$2
+	tput sc
+
+	tput cup $y $x
+	printf "$POINT $POINT $POINT"
+	y+=2
+	tput cup $y $x
+	printf "$POINT $EMPTY $EMPTY"
+	y+=2
+	tput cup $y $x
+	printf "$POINT $POINT $POINT"
+	y+=2
+	tput cup $y $x
+	printf "$POINT $EMPTY $POINT"
+	y+=2
+	tput cup $y $x
+	printf "$POINT $POINT $POINT"
+}
+
+_ustb_draw_digit_7() {
+	local -i x=$1
+	local -i y=$2
+	tput sc
+
+	tput cup $y $x
+	printf "$POINT $POINT $POINT"
+	y+=2
+	tput cup $y $x
+	printf "$EMPTY $EMPTY $POINT"
+	y+=2
+	tput cup $y $x
+	printf "$EMPTY $EMPTY $POINT"
+	y+=2
+	tput cup $y $x
+	printf "$EMPTY $EMPTY $POINT"
+	y+=2
+	tput cup $y $x
+	printf "$EMPTY $EMPTY $POINT"
+}
+
+_ustb_draw_digit_8() {
+	local -i x=$1
+	local -i y=$2
+	tput sc
+
+	tput cup $y $x
+	printf "$POINT $POINT $POINT"
+	y+=2
+	tput cup $y $x
+	printf "$POINT $EMPTY $POINT"
+	y+=2
+	tput cup $y $x
+	printf "$POINT $POINT $POINT"
+	y+=2
+	tput cup $y $x
+	printf "$POINT $EMPTY $POINT"
+	y+=2
+	tput cup $y $x
+	printf "$POINT $POINT $POINT"
+}
+
+_ustb_draw_digit_9() {
+	local -i x=$1
+	local -i y=$2
+	tput sc
+
+	local -i x=$1
+	local -i y=$2
+	tput sc
+
+	tput cup $y $x
+	printf "$POINT $POINT $POINT"
+	y+=2
+	tput cup $y $x
+	printf "$POINT $EMPTY $POINT"
+	y+=2
+	tput cup $y $x
+	printf "$POINT $POINT $POINT"
+	y+=2
+	tput cup $y $x
+	printf "$EMPTY $EMPTY $POINT"
+	y+=2
+	tput cup $y $x
+	printf "$EMPTY $EMPTY $POINT"
+
+}
+
+# handle exit
+trap _ustb_bye 0
+
 # Run in cli mode if no arguments,
 [ $# -lt 1 ] && {
-	trap _ustb_bye 0
-
 	while read -ep "ustb> " line; do
 		_ustb_command $line
 	done
