@@ -245,7 +245,12 @@ ustb_clock() {
 		_ustb_draw_clock $tty_size $date_string
 		[ $? -ne 0 ] && return 1
 
-		sleep 0.1
+		read -t 0.1 -n1 ch
+		[ "$ch" == "q" ] && {
+			tput cnorm
+			clear
+			return 0
+		}
 	done
 }
 
