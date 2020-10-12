@@ -285,7 +285,7 @@ _ustb_draw_clock() {
 	}
 
 	[ $CLOCK_FORCE_UPDATE -eq 0 ] &&
-		[ ${min_0:--1} -eq $((${minute/^0//} % 10)) ] &&
+		[ ${min_0:--1} -eq $(($minute % 10)) ] &&
 		return
 
 	min_0=$(($minute % 10))
@@ -342,6 +342,17 @@ _ustb_draw_info() {
 		sed "s/.*fee='//;s/[[:space:]].*//")
 	fee=$(echo "scale=2;$fee/10000" | bc)
 
+	# set color
+	if [ $(bc <<<"$fee > 30") -eq 1 ]; then
+		COLOR_FEE="\033[32m"
+	elif [ $(bc <<<"$fee > 10") -eq 1 ]; then
+		COLOR_FEE="\033[34m"
+	elif [ $(bc <<<"$fee > 3") -eq 1 ]; then
+		COLOR_FEE="\033[33m"
+	elif [ $(bc <<<"$fee > 1") -eq 1 ]; then
+		COLOR_FEE="\033[31m"
+	fi
+
 	tput cup $2 $padding_x
 	printf "IPV4 Flow:"
 	len=${#flow}
@@ -364,7 +375,7 @@ _ustb_draw_info() {
 	for ((i = 0; i < 18 - $len; i++)); do
 		printf " "
 	done
-	printf "%s" "$fee"
+	printf "$COLOR_FEE%s\033[0m" "$fee"
 }
 
 _ustb_draw_date() {
@@ -378,7 +389,7 @@ _ustb_draw_date() {
 }
 
 EMPTY=" "
-POINT="\033[47m \033[0m"
+POINT="\033[46m \033[0m"
 
 _ustb_draw_dots() {
 	local -i x=$1
