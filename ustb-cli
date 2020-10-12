@@ -8,6 +8,8 @@ ALWAYS_ATTEMPT_IPV6=1
 ALWAYS_USE_DEFAULT_USER=1
 WIFI_SKIP_LOGIN="USTB-Student USTB-V6"
 
+CLOCK_FORCE_UPDATE=1
+
 # Bouncing commands to functions
 _ustb_command() {
 	# ignore empty line
@@ -270,22 +272,36 @@ _ustb_draw_clock() {
 		dots=true
 	}
 
-	[ ${min_0:--1} -eq $((${minute/^0//} % 10)) ] && return
+	[ $CLOCK_FORCE_UPDATE -eq 0 ] &&
+		[ ${min_0:--1} -eq $((${minute/^0//} % 10)) ] &&
+		return
+
 	min_0=$(($minute % 10))
 	_ustb_draw_digit_${min_0} $(($padding_x + 34)) $padding_y
 
 	# update every minute
-	_ustb_draw_info $tty_width $(($padding_y + 12))
+	[ ${second:-0} -eq 0 ] &&
+		_ustb_draw_info $tty_width $(($padding_y + 12))
+	second=$(date +%S | sed 's/^0//')
 
-	[ ${min_1:--1} -eq $(($minute - $min_0)) ] && return
+	[ $CLOCK_FORCE_UPDATE -eq 0 ] &&
+		[ ${min_1:--1} -eq $(($minute - $min_0)) ] &&
+		return
+
 	min_1=$((($minute - $min_0) / 10))
 	_ustb_draw_digit_${min_1} $(($padding_x + 25)) $padding_y
 
-	[ ${hour_0:--1} -eq $(($hour % 10)) ] && return
+	[ $CLOCK_FORCE_UPDATE -eq 0 ] &&
+		[ ${hour_0:--1} -eq $(($hour % 10)) ] &&
+		return
+
 	hour_0=$(($hour % 10))
 	_ustb_draw_digit_${hour_0} $(($padding_x + 9)) $padding_y
 
-	[ ${hour_1:--1} -eq $(($hour - $hour_0)) ] && return
+	[ $CLOCK_FORCE_UPDATE -eq 0 ] &&
+		[ ${hour_1:--1} -eq $(($hour - $hour_0)) ] &&
+		return
+
 	hour_1=$((($hour - $hour_0) / 10))
 	_ustb_draw_digit_${hour_1} $padding_x $padding_y
 
