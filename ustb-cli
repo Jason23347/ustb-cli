@@ -152,30 +152,36 @@ ustb_fee() {
 		sed "s/.*fee='//;s/[[:space:]].*//")
 	fee=$(echo "scale=2;$fee/10000" | bc)
 
-	# set color
-	if [ $(bc <<<"$fee > 30") -eq 1 ]; then
-		COLOR_FEE="\033[32m"
-	elif [ $(bc <<<"$fee > 10") -eq 1 ]; then
-		COLOR_FEE="\033[34m"
-	elif [ $(bc <<<"$fee > 3") -eq 1 ]; then
-		COLOR_FEE="\033[33m"
-	elif [ $(bc <<<"$fee > 1") -eq 1 ]; then
-		COLOR_FEE="\033[31m"
-	fi
 
 	# set color
 	if [ $(bc <<<"$cost < 10") -eq 1 ]; then
-		COLOR_COST="\033[32m"
+		COLOR="\033[32m"
 	elif [ $(bc <<<"$cost < 30") -eq 1 ]; then
-		COLOR_COST="\033[34m"
+		COLOR="\033[34m"
 	elif [ $(bc <<<"$cost < 50") -eq 1 ]; then
-		COLOR_COST="\033[33m"
+		COLOR="\033[33m"
 	else
-		COLOR_COST="\033[31m"
+		COLOR="\033[31m"
 	fi
 
-	printf "Money Cost: ${COLOR_COST}￥%s\033[0m\n" $cost
-	printf "Money left: ${COLOR_FEE}￥%s\033[0m\n\n" $fee
+	printf "Money Cost: ${COLOR}￥%s\033[0m\n" $cost
+
+	# set color
+	_ustb_fee_color $fee
+	printf "Money left: ${COLOR}￥%s\033[0m\n\n" $fee
+}
+
+_ustb_fee_color() {
+	local fee=$1
+	if [ $(bc <<<"$fee > 30") -eq 1 ]; then
+		COLOR="\033[32m" # green
+	elif [ $(bc <<<"$fee > 10") -eq 1 ]; then
+		COLOR="\033[34m" # blue
+	elif [ $(bc <<<"$fee > 3") -eq 1 ]; then
+		COLOR="\033[33m" # yellow
+	elif [ $(bc <<<"$fee > 1") -eq 1 ]; then
+		COLOR="\033[31m" # red
+	fi
 }
 
 ustb_whoami() {
@@ -441,17 +447,6 @@ _ustb_draw_info() {
 		sed "s/.*fee='//;s/[[:space:]].*//")
 	fee=$(echo "scale=2;$fee/10000" | bc)
 
-	# set color
-	if [ $(bc <<<"$fee > 30") -eq 1 ]; then
-		COLOR_FEE="\033[32m"
-	elif [ $(bc <<<"$fee > 10") -eq 1 ]; then
-		COLOR_FEE="\033[34m"
-	elif [ $(bc <<<"$fee > 3") -eq 1 ]; then
-		COLOR_FEE="\033[33m"
-	elif [ $(bc <<<"$fee > 1") -eq 1 ]; then
-		COLOR_FEE="\033[31m"
-	fi
-
 	# start output
 	_ustb_draw_info_line $padding_x $padding_y \
 		"Download:" "$speed"
@@ -465,14 +460,11 @@ _ustb_draw_info() {
 	_ustb_draw_info_line $padding_x $padding_y \
 		"IPV6 Flow:" "$flow_v6"
 
+	# set color
+	_ustb_fee_color $fee
 	padding_y+=1
-	tput cup $padding_y $padding_x
-	printf "Fee Left:"
-	len=${#fee}
-	for ((i = 0; i < $CLOCK_INFO_WIDTH - 9 - $len; i++)); do
-		printf " "
-	done
-	printf "$COLOR_FEE%s\033[0m" "$fee"
+	_ustb_draw_info_line $padding_x $padding_y \
+		"Fee Left:" "$fee"
 
 	# move back cursor position
 	tput rc
