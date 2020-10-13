@@ -10,6 +10,7 @@ WIFI_SKIP_LOGIN="USTB-Student USTB-V6"
 
 CLOCK_COLOR="\033[46m"
 CLOCK_FORCE_UPDATE=1
+# Default: Mon Oct 12 PM
 CLOCK_DATE_FORMAT="%a %b %d %p"
 # Width of a digit dot
 CLOCK_WIDTH=2
@@ -239,6 +240,8 @@ ustb_clock() {
 	# make cursor invisible
 	tput civis
 
+	trap _ustb_reset_tty_size SIGWINCH
+
 	# Digit variables
 	EMPTY=
 	for ((i = 0; i < $CLOCK_WIDTH; i++)); do
@@ -261,26 +264,31 @@ ustb_clock() {
 
 		# minute hour
 		date_string=$(date +"%M %l")
+
+		# passing params divided by space if without quoting
+		# 4 params: width height minute hour
 		_ustb_draw_clock $tty_size $date_string
 		[ $? -ne 0 ] && return 1
 
+		# press 'q' to quit
 		read -t 0.1 -n1 ch
 		[ "$ch" == "q" ] && {
 			clear
 			tput cnorm
-			return 0
+			break
 		}
 	done
 }
 
 _ustb_reset_tty_size() {
 	sleep 0.2
+	# refresh screen
 	tput clear
+	# reset tty size
 	tty_size=$(stty size)
-	unset dots second
+	# redraw ':' and flow info
+	unset _dots _flow_info
 }
-
-trap _ustb_reset_tty_size SIGWINCH
 
 _ustb_draw_clock() {
 	local -i tty_height=$1
@@ -290,13 +298,15 @@ _ustb_draw_clock() {
 	local -i minute=$(echo $3 | sed 's/^0//')
 	local -i hour=$(echo $4 | sed 's/^0//')
 
-	# Calculate positions
+	# Calculate position
+	# Space between dots and digits is thinner, so minus 2 * offset
 	min_width=$((5 * CLOCK_BLOCK + 4 * CLOCK_SPACE - 2 * $CLOCK_DOTS_OFFSET))
 	# height: 10 (clock) + 2 (date) + 4 (flow info)
 	min_height=16
 	padding_x=$((($tty_width - $min_width) / 2))
 	padding_y=$((($tty_height - $min_height) / 2))
 
+	# If terminal is not big enough, padding will be under 0
 	[ $padding_x -lt 0 ] || [ $padding_y -lt 0 ] && {
 		echo "Error: Minimum tty size ${min_height}x${min_width} required."
 		return 1
@@ -305,18 +315,24 @@ _ustb_draw_clock() {
 	# Initialize cursor position
 	tput cup 0 0
 
-	[ -v dots ] || {
+	# never redraw dots unless window size is changed
+	[ -v _dots ] || {
 		_ustb_draw_dots \
 			$(($padding_x + 2 * $CLOCK_GAP - $CLOCK_DOTS_OFFSET)) \
 			$padding_y
-		dots=true
+		_dots=1
 	}
 
+	# Skip further drawing unless force-updated
+	# or the current digit mismatched with number
 	[ $CLOCK_FORCE_UPDATE -eq 0 ] &&
 		[ ${min_0:--1} -eq $(($minute % 10)) ] &&
 		return
 
+	# set number
 	min_0=$(($minute % 10))
+	# call the corresponding funciton, e.g. _ustb_draw_digit_7,
+	# passing (col, row) position as parameters
 	_ustb_draw_digit_${min_0} \
 		$(($padding_x + 4 * $CLOCK_GAP - 2 * $CLOCK_DOTS_OFFSET)) \
 		$padding_y
@@ -348,20 +364,26 @@ _ustb_draw_clock() {
 		$padding_x \
 		$padding_y
 
+	# draw date with date format
+	# FIXME: called too many times if force-updated
 	_ustb_draw_date $tty_width $(($padding_y + 10))
 
 	# update every minute
-	[ ${second:-0} -eq 0 ] &&
+	# set to 0 by default to ensure load info
+	# when running for the first time
+	[ ${_flow_info:-0} -eq 0 ] &&
 		_ustb_draw_info $tty_width $(($padding_y + 12))
-	second=$(date +%S | sed 's/^0//')
+	_flow_info=$(date +%S | sed 's/^0//')
 }
 
 _ustb_draw_info() {
-	local len padding_x
+	local -i len padding_x
+	local -i padding_y=$2
 	local res=$(curl -s $LOGIN_HOST)
-
+	# save cursor position
 	tput sc
 
+	# Print error info and return when cannot connect to server
 	[ "$res" == "" ] && {
 		local str="Couldn't connect to server"
 		len=${#str}
@@ -373,9 +395,22 @@ _ustb_draw_info() {
 
 	padding_x=$((($1 - 27) / 2))
 
+	# Calculate download speed
+	now=$(date +%s)
 	# IPV4 flow
-	local flow=$(echo "$res" | grep "flow=" |
+	flow=$(echo "$res" | grep "flow=" |
 		sed "s/.*flow='//;s/[[:space:]].*//")
+
+	local -i divide=$now-${last:-0}
+	if [ $divide -gt 3 ]; then
+		speed=$(echo "scale=2;($flow-${old_flow:-0})/($now-${last:-0})" | bc)
+		# Human readable
+		speed=$(_ustb_flow $speed)/s
+	fi
+
+	last=$now
+	old_flow=$flow
+	# Human readable
 	flow=$(_ustb_flow $flow)
 
 	# IPV6 flow
@@ -399,7 +434,19 @@ _ustb_draw_info() {
 		COLOR_FEE="\033[31m"
 	fi
 
-	tput cup $2 $padding_x
+	# start output
+	tput cup $padding_y $padding_x
+	printf "Download:"
+	len=${#speed}
+	# align right using spaces
+	for ((i = 0; i < 18 - $len; i++)); do
+		printf " "
+	done
+	printf "%s" "$speed"
+
+	# move cursor to the next line
+	padding_y+=1
+	tput cup $padding_y $padding_x
 	printf "IPV4 Flow:"
 	len=${#flow}
 	for ((i = 0; i < 17 - $len; i++)); do
@@ -407,7 +454,8 @@ _ustb_draw_info() {
 	done
 	printf "%s" "$flow"
 
-	tput cup $(($2 + 1)) $padding_x
+	padding_y+=1
+	tput cup $padding_y $padding_x
 	printf "IPV6 Flow:"
 	len=${#flow_v6}
 	for ((i = 0; i < 17 - $len; i++)); do
@@ -415,7 +463,8 @@ _ustb_draw_info() {
 	done
 	printf "%s" "$flow_v6"
 
-	tput cup $(($2 + 2)) $padding_x
+	padding_y+=1
+	tput cup $padding_y $padding_x
 	printf "Fee Left:"
 	len=${#fee}
 	for ((i = 0; i < 18 - $len; i++)); do
@@ -423,11 +472,11 @@ _ustb_draw_info() {
 	done
 	printf "$COLOR_FEE%s\033[0m" "$fee"
 
+	# move back cursor position
 	tput rc
 }
 
 _ustb_draw_date() {
-	# Format: Mon Oct 12 PM
 	local str=$(date +"$CLOCK_DATE_FORMAT")
 	local len=${#str}
 	local padding_x=$((($1 - $len) / 2))
@@ -459,6 +508,13 @@ _ustb_draw_digit_0() {
 	local -i y=$2
 	tput sc
 
+	# 1 1 1
+
+	# 1 0 1
+	# 1 0 1
+	# 1 0 1
+
+	# 1 1 1
 	tput cup $y $x
 	printf "$POINT $POINT $POINT"
 	for ((i = 0; i < 3; i++)); do
@@ -479,6 +535,7 @@ _ustb_draw_digit_1() {
 	local -i y=$2
 	tput sc
 
+	# 0 1 0
 	for ((i = 0; i < 5; i++)); do
 		tput cup $y $x
 		# 0 1 0
