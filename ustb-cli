@@ -378,6 +378,22 @@ _ustb_draw_clock() {
 	_flow_info=$(date +%S | sed 's/^0//')
 }
 
+_ustb_draw_info_line() {
+	padding_x=$1
+	padding_y=$2
+	prompt="$3"
+	content="$4"
+
+	tput cup $padding_y $padding_x
+	printf "%s" "$prompt"
+	for ((i = 0; i < $CLOCK_INFO_WIDTH - ${#prompt} - ${#content}; i++)); do
+		printf " "
+	done
+	printf "${COLOR}%s\033[0m" "$content"
+	# clear color variable
+	COLOR=
+}
+
 _ustb_draw_info() {
 	local -i len padding_x
 	local -i padding_y=$2
@@ -437,33 +453,17 @@ _ustb_draw_info() {
 	fi
 
 	# start output
-	tput cup $padding_y $padding_x
-	printf "Download:"
-	len=${#speed}
-	# align right using spaces
-	for ((i = 0; i < $CLOCK_INFO_WIDTH - 9 - $len; i++)); do
-		printf " "
-	done
-	printf "%s" "$speed"
+	_ustb_draw_info_line $padding_x $padding_y \
+		"Download:" "$speed"
 
 	# move cursor to the next line
 	padding_y+=1
-	tput cup $padding_y $padding_x
-	printf "IPV4 Flow:"
-	len=${#flow}
-	for ((i = 0; i < $CLOCK_INFO_WIDTH - 10 - $len; i++)); do
-		printf " "
-	done
-	printf "%s" "$flow"
+	_ustb_draw_info_line $padding_x $padding_y \
+		"IPV4 Flow:" "$flow"
 
 	padding_y+=1
-	tput cup $padding_y $padding_x
-	printf "IPV6 Flow:"
-	len=${#flow_v6}
-	for ((i = 0; i < $CLOCK_INFO_WIDTH - 10 - $len; i++)); do
-		printf " "
-	done
-	printf "%s" "$flow_v6"
+	_ustb_draw_info_line $padding_x $padding_y \
+		"IPV6 Flow:" "$flow_v6"
 
 	padding_y+=1
 	tput cup $padding_y $padding_x
