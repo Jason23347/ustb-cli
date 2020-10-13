@@ -707,7 +707,6 @@ _ustb_draw_digit_9() {
 
 # handle exit
 trap _ustb_bye 0
-exec 2>&0
 
 # Run in cli mode if no arguments
 [ $# -lt 1 ] && {
