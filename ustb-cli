@@ -11,7 +11,7 @@ WIFI_SKIP_LOGIN="USTB-Student USTB-V6"
 CLOCK_COLOR="\033[46m"
 CLOCK_FORCE_UPDATE=1
 # Default: Mon Oct 12 PM
-CLOCK_DATE_FORMAT="%a %b  %d %p"
+CLOCK_DATE_FORMAT="%a %b %d  %p"
 # Width of a digit dot
 CLOCK_WIDTH=2
 # Spaces between the digits
@@ -152,7 +152,6 @@ ustb_fee() {
 		sed "s/.*fee='//;s/[[:space:]].*//")
 	fee=$(echo "scale=2;$fee/10000" | bc)
 
-
 	# set color
 	if [ $(bc <<<"$cost < 10") -eq 1 ]; then
 		COLOR="\033[32m"
@@ -263,7 +262,7 @@ ustb_clock() {
 	[ -v CLOCK_GAP ] ||
 		declare -i CLOCK_GAP=$CLOCK_BLOCK+$CLOCK_SPACE
 	[ -v CLOCK_DOTS_OFFSET ] ||
-		declare -i CLOCK_DOTS_OFFSET=$CLOCK_SPACE/3
+		declare -i CLOCK_DOTS_OFFSET=$CLOCK_SPACE*2/3
 
 	while :; do
 		# get tty size
@@ -321,7 +320,7 @@ _ustb_draw_clock() {
 	}
 
 	# Initialize cursor position
-	tput cup 0 0
+	tput cup $tty_height 0
 
 	# never redraw dots unless window size is changed
 	[ -v _dots ] || {
@@ -401,7 +400,7 @@ _ustb_draw_info_line() {
 }
 
 _ustb_draw_info() {
-	local -i len padding_x
+	local -i padding_x
 	local -i padding_y=$2
 	local res=$(curl -s $LOGIN_HOST)
 	# save cursor position
@@ -410,11 +409,15 @@ _ustb_draw_info() {
 	# Print error info and return when cannot connect to server
 	[ "$res" == "" ] && {
 		local str="Couldn't connect to server"
-		len=${#str}
-		padding_x=$((($1 - $len) / 2))
-		tput cup $2 $padding_x
+		padding_x=$((($1 - ${#str}) / 2))
+		# Erase outdated info
+		tput cup $padding_y 0
+		tput ed
+		# Show error message
+		tput cup $padding_y $padding_x
 		printf "\033[31m%s\033[0m" "$str"
-		return 0
+		tput rc
+		return 1
 	}
 
 	padding_x=$((($1 - 28) / 2))
@@ -486,7 +489,7 @@ _ustb_draw_dots() {
 	local -i y=$2
 	tput sc
 
-	x+=$((($CLOCK_BLOCK - $CLOCK_DOTS_OFFSET - 1) / 2))
+	x+=$(($CLOCK_BLOCK / 2 - 1))
 	y+=2
 	tput cup $y $x
 	printf "$POINT"
