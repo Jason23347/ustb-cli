@@ -11,11 +11,13 @@ WIFI_SKIP_LOGIN="USTB-Student USTB-V6"
 CLOCK_COLOR="\033[46m"
 CLOCK_FORCE_UPDATE=1
 # Default: Mon Oct 12 PM
-CLOCK_DATE_FORMAT="%a %b %d %p"
+CLOCK_DATE_FORMAT="%a %b  %d %p"
 # Width of a digit dot
 CLOCK_WIDTH=2
-# space between the digits
+# Spaces between the digits
 CLOCK_SPACE=3
+# Width for info block in clock mode
+CLOCK_INFO_WIDTH=28
 
 # Bouncing commands to functions
 _ustb_command() {
@@ -393,7 +395,7 @@ _ustb_draw_info() {
 		return 0
 	}
 
-	padding_x=$((($1 - 27) / 2))
+	padding_x=$((($1 - 28) / 2))
 
 	# Calculate download speed
 	now=$(date +%s)
@@ -439,7 +441,7 @@ _ustb_draw_info() {
 	printf "Download:"
 	len=${#speed}
 	# align right using spaces
-	for ((i = 0; i < 18 - $len; i++)); do
+	for ((i = 0; i < $CLOCK_INFO_WIDTH - 9 - $len; i++)); do
 		printf " "
 	done
 	printf "%s" "$speed"
@@ -449,7 +451,7 @@ _ustb_draw_info() {
 	tput cup $padding_y $padding_x
 	printf "IPV4 Flow:"
 	len=${#flow}
-	for ((i = 0; i < 17 - $len; i++)); do
+	for ((i = 0; i < $CLOCK_INFO_WIDTH - 10 - $len; i++)); do
 		printf " "
 	done
 	printf "%s" "$flow"
@@ -458,7 +460,7 @@ _ustb_draw_info() {
 	tput cup $padding_y $padding_x
 	printf "IPV6 Flow:"
 	len=${#flow_v6}
-	for ((i = 0; i < 17 - $len; i++)); do
+	for ((i = 0; i < $CLOCK_INFO_WIDTH - 10 - $len; i++)); do
 		printf " "
 	done
 	printf "%s" "$flow_v6"
@@ -467,7 +469,7 @@ _ustb_draw_info() {
 	tput cup $padding_y $padding_x
 	printf "Fee Left:"
 	len=${#fee}
-	for ((i = 0; i < 18 - $len; i++)); do
+	for ((i = 0; i < $CLOCK_INFO_WIDTH - 9 - $len; i++)); do
 		printf " "
 	done
 	printf "$COLOR_FEE%s\033[0m" "$fee"
