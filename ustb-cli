@@ -27,7 +27,7 @@ _ustb_command() {
 	command=$1
 	shift
 
-	# check if command exisists
+	# check if command exists
 	type -t "ustb_$command" >/dev/null
 	[ $? -ne 0 ] && {
 		[ "$command" == "exit" ] && exit 0
@@ -45,7 +45,7 @@ _ustb_bye() {
 }
 
 _ustb_flow() {
-	local flow=$1
+	local flow=${1:-0}
 	if [ $(echo "$flow / 1024 < 1" | bc) -eq 1 ]; then
 		printf "%s KB" $flow
 	elif [ $(echo "$flow / 1024^2 < 1" | bc) -eq 1 ]; then
@@ -171,7 +171,7 @@ ustb_fee() {
 }
 
 _ustb_fee_color() {
-	local fee=$1
+	local fee=${1:-0}
 	if [ $(bc <<<"$fee > 30") -eq 1 ]; then
 		COLOR="\033[32m" # green
 	elif [ $(bc <<<"$fee > 10") -eq 1 ]; then
@@ -247,7 +247,7 @@ ustb_clock() {
 	# make cursor invisible
 	tput civis
 
-	trap _ustb_reset_tty_size SIGWINCH
+	trap _ustb_reset_tty SIGWINCH
 
 	# Digit variables
 	EMPTY=
@@ -287,7 +287,7 @@ ustb_clock() {
 	done
 }
 
-_ustb_reset_tty_size() {
+_ustb_reset_tty() {
 	sleep 0.2
 	# refresh screen
 	tput clear
@@ -402,6 +402,7 @@ _ustb_draw_info_line() {
 _ustb_draw_info() {
 	local -i padding_x
 	local -i padding_y=$2
+	local v4_only=0
 	local res=$(curl -s $LOGIN_HOST)
 	# save cursor position
 	tput sc
@@ -456,12 +457,19 @@ _ustb_draw_info() {
 
 	# move cursor to the next line
 	padding_y+=1
-	_ustb_draw_info_line $padding_x $padding_y \
-		"IPV4 Flow:" "$flow"
+	if [ $v4_only -eq 0 ]; then
+		COLOR="\033[32m" # green
+		_ustb_draw_info_line $padding_x $padding_y \
+			"IPV6 Mode:" "ON"
+	else
+		COLOR="\033[31m" # red
+		_ustb_draw_info_line $padding_x $padding_y \
+			"IPV6 Mode:" "OFF"
+	fi
 
 	padding_y+=1
 	_ustb_draw_info_line $padding_x $padding_y \
-		"IPV6 Flow:" "$flow_v6"
+		"IPV4 Flow:" "$flow"
 
 	# set color
 	_ustb_fee_color $fee
