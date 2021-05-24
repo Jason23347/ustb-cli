@@ -767,11 +767,11 @@ _ustb_draw_digit_9() {
 	tput rc
 }
 
-# handle exit
-trap _ustb_bye 0
-
 # Run in cli mode if no arguments
 [ $# -lt 1 ] && {
+	# handle exit
+	trap _ustb_bye 0
+
 	while read -ep "ustb> " line; do
 		_ustb_command $line
 	done
