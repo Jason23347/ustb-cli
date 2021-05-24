@@ -99,7 +99,7 @@ ustb_info() {
 	[ $v46m -eq 4 ] || [ $v46m -eq 12 ] || v4_only=1
 
 	# IPV4 flow
-	local flow=$(echo "$res" | grep "flow=" |
+	local flow=$(echo "$res" | grep ";flow=" |
 		sed "s/.*flow='//;s/[[:space:]].*//")
 
 	# IPV4 fee
@@ -127,7 +127,7 @@ INFO
 
 	printf "\033[32mIPV6\033[0m\n"
 	cat <<INFO
-IP address:	$(echo "$res" | grep "v6ip=" | sed "s/.*v6ip='//;s/'.*//")
+IP address:	$(echo "$res" | grep ";v6ip=" | sed "s/.*;v6ip='//;s/'.*//")
 Flow:		$(_ustb_flow $flow_v6)
 
 Flow Saving rate (%):	$(echo "scale=2; $flow_v6 / ($flow_v6 + $flow)" | bc)
@@ -143,7 +143,7 @@ ustb_fee() {
 	local COLOR_="\033[0m"
 
 	# cost
-	local flow=$(echo "$res" | grep "flow=" |
+	local flow=$(echo "$res" | grep ";flow=" |
 		sed "s/.*flow='//;s/[[:space:]].*//")
 	local cost=$(echo "scale=2; $flow / (1024 ^ 2) / 1.5" | bc)
 
@@ -426,7 +426,7 @@ _ustb_draw_info() {
 	# Calculate download speed
 	now=$(date +%s)
 	# IPV4 flow
-	flow=$(echo "$res" | grep "flow=" |
+	flow=$(echo "$res" | grep ";flow=" |
 		sed "s/.*flow='//;s/[[:space:]].*//")
 
 	local -i divide=$now-${last:-0}
