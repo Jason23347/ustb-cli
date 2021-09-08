@@ -201,9 +201,10 @@ ustb_login() {
 	local res=$(curl -s $LOGIN_HOST | grep ';uid')
 	[ $? -eq 0 ] && username=$(echo "$res" |
 		iconv -f GBK -t UTF-8 | sed "s/.*uid='//;s/';.*//")
+		echo "username:" $username
 
 	# Input username or use default
-	if [ -n username ] && [ $ALWAYS_USE_DEFAULT_USER -ne 1 ]; then
+	if [ -n "$username" ] && [ $ALWAYS_USE_DEFAULT_USER -ne 0 ]; then
 		read -n1 -ep "Login as $username? [Y/n]" yn
 		[[ $yn =~ N|n ]] &&
 			read -ep "Username: " username
