@@ -1,7 +1,7 @@
 #!/bin/bash
 
 SCRIPTNAME=${0##*/}
-VERSION=v1.2
+VERSION=v1.3
 
 LOGIN_HOST=202.204.48.82
 ALWAYS_ATTEMPT_IPV6=1
@@ -10,7 +10,7 @@ WIFI_SKIP_LOGIN="USTB-Student USTB-V6"
 
 CLOCK_COLOR="\033[46m"
 CLOCK_FORCE_UPDATE=1
-# Default: Mon Oct 12 PM
+# Default: Mon Oct 12  PM
 CLOCK_DATE_FORMAT="%a %b %d  %p"
 # Width of a digit dot
 CLOCK_WIDTH=2
@@ -45,7 +45,7 @@ _ustb_bye() {
 }
 
 _ustb_flow() {
-	local -i flow=$(echo ${1} | tr -cd "[0-9]" | sed 's/^0\+//')
+	local -i flow=$(echo ${1:-0} | tr -cd "[0-9\/]" | sed 's/^0\+//')
 
 	if [ $(echo "$flow / 1024 < 1" | bc) -eq 1 ]; then
 		printf "%s KB" $flow
@@ -108,8 +108,8 @@ ustb_info() {
 		sed "s/.*fee='//;s/[[:space:]].*//")
 
 	# IPV6 upload flow
-	local flow_v6=$(echo "$res" | grep "v6af=" |
-		sed "s/.*v6af=//;s/;.*//")/4
+	local flow_v6=$(echo "$res" | grep "v6df=" |
+		sed "s/.*v6df=//;s/;.*//")/4
 
 	printf "\033[34mIPV4\033[0m\n"
 	cat <<INFO
@@ -146,7 +146,13 @@ ustb_fee() {
 	# cost
 	local flow=$(echo "$res" | grep ";flow=" |
 		sed "s/.*flow='//;s/[[:space:]].*//")
-	local cost=$(echo "scale=2; $flow / (1024 ^ 2) / 1.5" | bc)
+	local cost
+	# First 50G free
+	if [ $(echo "$flow < 52428800" | bc) -eq 1 ]; then
+		cost=0
+	else
+		cost=$(echo "scale=2; ($flow / (1024 ^ 2) - 50) / 1.5" | bc)
+	fi
 
 	# fee
 	local fee=$(echo "$res" | grep 'fee=' |
@@ -202,7 +208,7 @@ ustb_login() {
 	local res=$(curl -s $LOGIN_HOST | grep ';uid')
 	[ $? -eq 0 ] && username=$(echo "$res" |
 		iconv -f GBK -t UTF-8 | sed "s/.*uid='//;s/';.*//")
-		echo "username:" $username
+	echo "username:" $username
 
 	# Input username or use default
 	if [ -n "$username" ] && [ $ALWAYS_USE_DEFAULT_USER -ne 0 ]; then
@@ -433,7 +439,7 @@ _ustb_draw_info() {
 
 	local -i divide=$now-${last:-0}
 	if [ $divide -gt 3 ]; then
-		speed=$(echo "scale=2;($flow-${old_flow:-0})/($now-${last:-0})" | bc)
+		speed=$(echo "scale=2;(${flow:-$old_flow}-${old_flow:-0})/($now-${last:-0})" | bc)
 		# Human readable
 		speed=$(_ustb_flow $speed)/s
 	fi
@@ -444,8 +450,8 @@ _ustb_draw_info() {
 	flow=$(_ustb_flow $flow)
 
 	# IPV6 flow
-	local flow_v6=$(echo "$res" | grep "v6af=" |
-		sed "s/.*v6af=//;s/;.*//")/4
+	local flow_v6=$(echo "$res" | grep "v6df=" |
+		sed "s/.*v6df=//;s/;.*//")/4
 	flow_v6=$(_ustb_flow $flow_v6)
 
 	# fee
