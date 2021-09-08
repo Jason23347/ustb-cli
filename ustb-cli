@@ -45,7 +45,8 @@ _ustb_bye() {
 }
 
 _ustb_flow() {
-	local flow=${1:-0}
+	local -i flow=$(echo ${1} | tr -cd "[0-9]")
+
 	if [ $(echo "$flow / 1024 < 1" | bc) -eq 1 ]; then
 		printf "%s KB" $flow
 	elif [ $(echo "$flow / 1024^2 < 1" | bc) -eq 1 ]; then
