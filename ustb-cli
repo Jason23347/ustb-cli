@@ -147,11 +147,11 @@ ustb_fee() {
 	local flow=$(echo "$res" | grep ";flow=" |
 		sed "s/.*flow='//;s/[[:space:]].*//")
 	local cost
-	# First 50G free
-	if [ $(echo "$flow < 52428800" | bc) -eq 1 ]; then
+	# First 120G free
+	if [ $(echo "$flow <= 120000000" | bc) -eq 1 ]; then
 		cost=0
 	else
-		cost=$(echo "scale=2; ($flow / (1024 ^ 2) - 50) / 1.5" | bc)
+		cost=$(echo "scale=2; ($flow / 1000000 - 120) * 0.6" | bc)
 	fi
 
 	# fee
