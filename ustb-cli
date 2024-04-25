@@ -1,13 +1,22 @@
 #!/bin/bash
 
 SCRIPTNAME=${0##*/}
-VERSION=v1.3
+VERSION=v1.4
 
-LOGIN_HOST=202.204.48.82
-ALWAYS_ATTEMPT_IPV6=1
+LOGIN_HOST=202.204.48.82 # 或者 202.204.48.66, login.ustb.edu.cn.
+
+# 该值可以为空，或者一个合法的IPV6地址。
+# 通过 http://cippv6.ustb.edu.cn/get_ip.php 获取的地址通常随MAC绑定。
+# 所以，不必每次都重新获取IPV6地址，反正不会变。
+DEFAULT_IPV6_ADDRESS=""
+
+# 0/1, 置0则不尝试获取IPV6地址，对确定没有IPV6地址的设备很有用。
+ATTEMPT_IPV6=1
+
+# 0/1, 置1则弹出确定窗口是否以当前登录用户重新登录，适用于刷新登录信息的情况。
 ALWAYS_USE_DEFAULT_USER=1
-WIFI_SKIP_LOGIN="USTB-Student USTB-V6"
 
+# CLOCK settings, do not change.
 CLOCK_COLOR="\033[46m"
 CLOCK_FORCE_UPDATE=1
 # Default: Mon Oct 12  PM
@@ -197,18 +206,9 @@ ustb_whoami() {
 }
 
 ustb_login() {
-	# Check ESSID
-	ESSID=$(/sbin/iwconfig 2>/dev/null | grep ESSID | awk '{print $4}' |
-		sed 's/ESSID://;s/"//g')
-	grep $ESSID 2>&1 1>/dev/null <<<$WIFI_SKIP_LOGIN && {
-		echo "warn: Auto logged in to $ESSID."
-		# return
-	}
-
 	local res=$(curl -s $LOGIN_HOST | grep ';uid')
 	[ $? -eq 0 ] && username=$(echo "$res" |
 		iconv -f GBK -t UTF-8 | sed "s/.*uid='//;s/';.*//")
-	echo "username:" $username
 
 	# Input username or use default
 	if [ -n "$username" ] && [ $ALWAYS_USE_DEFAULT_USER -ne 0 ]; then
@@ -220,24 +220,28 @@ ustb_login() {
 	fi
 
 	# Input password
-	read -sep "Passeord: " password
-	[ $ALWAYS_ATTEMPT_IPV6 -gt 0 ] && has_v6=y ||
-		read -n1 -ep "Enable IPV6 address?[y/N]" has_v6
+	read -sep "Password: " password
 
 	# Fetch IPV6 address
-	[[ "$has_v6" =~ (y|Y) ]] && {
+	[[ "$ATTEMPT_IPV6" -gt 1 ]] && {
 		printf "\nfetching IPV6 address..."
-		ip_addr=$(curl -s cippv6.ustb.edu.cn/get_ip.php |
-			grep "gIpV6Addr" |
-			sed "s/.*= '//;s/';.*//")
+		if [ -n "$DEFAULT_IPV6_ADDRESS" ]; then
+			ip_addr="$DEFAULT_IPV6_ADDRESS"
+		else
+			ip_addr=$(curl -s http://cippv6.ustb.edu.cn/get_ip.php |
+				grep "gIpV6Addr" |
+				sed "s/.*= '//;s/';.*//")
+		fi
 		printf "$ip_addr.\n"
 	}
 
 	# Do login
-	res=$(curl -s --retry 3 \
-		-d "DDDDD=$username&upass=$password&0MKKey=123456789&v6ip=$ip_addr" \
-		"$LOGIN_HOST" | grep "You have successfully logged into our system")
-	echo "Login succeeded."
+	params="callback=suibian&DDDDD=$username&upass=$password&0MKKey=123456&v6ip=$ip_addr"
+	curl -s --retry 3 "$LOGIN_HOST/drcom/login?$params" |
+		grep '"result":1' 2>&1 1>/dev/null
+	[ $? -eq 0 ] &&
+		echo "Login succeed." ||
+		echo "Login failed."
 }
 
 ustb_logout() {
