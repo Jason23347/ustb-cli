@@ -5,21 +5,30 @@ ustb_whoami() {
 }
 
 ustb_login() {
-	local res=$(curl -s $LOGIN_HOST | grep ';uid')
-	[ $? -eq 0 ] && username=$(echo "$res" |
-		iconv -f GBK -t UTF-8 | sed "s/.*uid='//;s/';.*//")
+	local username password res
 
-	# Input username or use default
-	if [ -n "$username" ] && [ $ALWAYS_USE_DEFAULT_USER -ne 0 ]; then
-		read -n1 -ep "Login as $username? [Y/n]" yn
-		[[ $yn =~ N|n ]] &&
-			read -ep "Username: " username
+	[ -v ENV_FILE ] && [ -f "$ENV_FILE" ] && . $ENV_FILE
+
+	if [ $? -eq 0 ]; then
+		username="$USTB_USERNAME"
+		password="$USTB_PASSWORD"
 	else
-		read -ep "Username: " username
-	fi
+		res=$(curl -s $LOGIN_HOST | grep ';uid')
+		[ $? -eq 0 ] && username=$(echo "$res" |
+			iconv -f GBK -t UTF-8 | sed "s/.*uid='//;s/';.*//")
 
-	# Input password
-	read -sep "Password: " password
+		# Input username or use default
+		if [ -n "$username" ] && [ $ALWAYS_USE_DEFAULT_USER -ne 0 ]; then
+			read -n1 -ep "Login as $username? [Y/n]" yn
+			[[ $yn =~ N|n ]] &&
+				read -ep "Username: " username
+		else
+			read -ep "Username: " username
+		fi
+
+		# Input password
+		read -sep "Password: " password
+	fi
 
 	# Fetch IPV6 address
 	[[ "$ATTEMPT_IPV6" -gt 1 ]] && {

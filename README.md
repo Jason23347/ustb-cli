@@ -39,6 +39,13 @@ ustb>
 
 脚本开头定义了一些选项。
 
+顺便一提，本项目提供了`ENV_FILE`文件的一个例子。该变量默认值`$HOME/.ustb.env`是一个可选的env文件，可以存储校园网账号的用户名和密码。
+
+```sh
+cp ./.ustb.env.example ~/.ustb.env
+vim ~/.ustb.env # 填写用户名和密码
+```
+
 ## 许可
 
 本项目遵循MIT许可证。

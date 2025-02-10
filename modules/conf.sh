@@ -5,6 +5,9 @@ ENABLE_CLI_MODE=1
 
 LOGIN_HOST=202.204.48.82 # 或者 202.204.48.66, login.ustb.edu.cn.
 
+# 存有用户名密码的env文件
+ENV_FILE=$HOME/.ustb.env
+
 # 该值可以为空，或者一个合法的IPV6地址。
 # 通过 http://cippv6.ustb.edu.cn/get_ip.php 获取的地址通常随MAC绑定。
 # 所以，不必每次都重新获取IPV6地址，反正不会变。
