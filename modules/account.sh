@@ -1,5 +1,5 @@
 ustb_whoami() {
-	printf "Current user: %s\n" \
+	printf "%s" \
 		$(curl -s $LOGIN_HOST | grep ';uid' |
 			iconv -f GBK -t UTF-8 | sed "s/.*uid='//;s/';.*//")
 }

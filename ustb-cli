@@ -11,7 +11,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-VERSION=v2.0
+VERSION=v2.1
 
 # 0/1, 置0则不会进入CLI模式。
 ENABLE_CLI_MODE=1
@@ -119,7 +119,7 @@ INFO
 }
 
 ustb_whoami() {
-	printf "Current user: %s\n" \
+	printf "%s" \
 		$(curl -s $LOGIN_HOST | grep ';uid' |
 			iconv -f GBK -t UTF-8 | sed "s/.*uid='//;s/';.*//")
 }
