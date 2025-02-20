@@ -17,11 +17,11 @@ ustb_info() {
 
 	# IPV4 flow
 	local flow=$(echo "$res" | grep ";flow=" |
-		sed "s/.*flow='//;s/[[:space:]].*//")
+		sed "s/.*flow='//;s/'.*//")
 
 	# IPV4 fee
 	local fee=$(echo "$res" | grep "fee=" |
-		sed "s/.*fee='//;s/[[:space:]].*//")
+		sed "s/.*fee='//;s/'.*//")
 
 	# IPV6 upload flow
 	local flow_v6=$(echo "$res" | grep "v6df=" |

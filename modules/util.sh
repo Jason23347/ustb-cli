@@ -32,9 +32,9 @@ _ustb_flow() {
 		printf "%s KB" $flow
 	elif [ $(echo "$flow / 1024^2 < 1" | bc) -eq 1 ]; then
 		printf "%s MB" $(echo "scale=2; $flow / 1024" | bc)
-	elif [ $(echo "$flow / 1024^2 < 9000" | bc) -eq 1 ]; then
+	elif [ $(echo "$flow / 1024^2 < 900" | bc) -eq 1 ]; then
 		printf "%s GB" $(echo "scale=2; $flow / 1024^2" | bc)
-	elif [ $(echo "$flow / 1024^3 > 1" | bc) -eq 1 ]; then
+	else
 		printf "%s TB" $(echo "scale=2; $flow / 1024^3" | bc)
 	fi
 }
