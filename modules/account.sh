@@ -31,7 +31,7 @@ ustb_login() {
 	fi
 
 	# Fetch IPV6 address
-	[[ "$ATTEMPT_IPV6" -gt 1 ]] && {
+	if [ "$ATTEMPT_IPV6" -ge 1 ]; then
 		printf "\nfetching IPV6 address..."
 		if [ -n "$DEFAULT_IPV6_ADDRESS" ]; then
 			ip_addr="$DEFAULT_IPV6_ADDRESS"
@@ -41,7 +41,7 @@ ustb_login() {
 				sed "s/.*= '//;s/';.*//")
 		fi
 		printf "$ip_addr.\n"
-	}
+	fi
 
 	# Do login
 	params="callback=suibian&DDDDD=$username&upass=$password&0MKKey=123456&v6ip=$ip_addr"
