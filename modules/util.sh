@@ -15,8 +15,8 @@ _ustb_command() {
 		echo "$SCRIPTNAME: '$command' is not a command. See '$SCRIPTNAME help'."
 		return 1
 	}
-	# excute
-	ustb_$command
+	# execute
+	ustb_$command "$@"
 }
 
 # Handle exit
@@ -48,7 +48,8 @@ logout		logout of USTB web
 clock		display a clock with flow info
 whoami		show current user
 fee		show network fees left
-info		show further flow infomation
+info		show further flow information
+speedtest	Test download speed
 version		show version and authors
 help		show this information
 
