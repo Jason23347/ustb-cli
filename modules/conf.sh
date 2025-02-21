@@ -1,4 +1,4 @@
-VERSION=v2.1
+VERSION=v2.3
 
 # 0/1, 置0则不会进入CLI模式。
 ENABLE_CLI_MODE=1

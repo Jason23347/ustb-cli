@@ -59,7 +59,7 @@ ustb_version() {
 	cat <<INFO
 $SCRIPTNAME $VERSION - A utility script for USTB web.
 
-Copyright  2020-2024	Shuaicheng Zhu <jason23347@gmail.com>
+Copyright  2020-2025	Shuaicheng Zhu <jason23347@gmail.com>
 
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,

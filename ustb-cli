@@ -2,7 +2,7 @@
 #
 # ustb-cli: A utility script for USTB web.
 #
-# Copyright  2020-2024    Shuaicheng Zhu <jason23347@gmail.com>
+# Copyright  2020-2025    Shuaicheng Zhu <jason23347@gmail.com>
 # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 # IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 # FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -11,7 +11,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-VERSION=v2.1
+VERSION=v2.3
 
 # 0/1, 置0则不会进入CLI模式。
 ENABLE_CLI_MODE=1
@@ -105,7 +105,7 @@ ustb_version() {
 	cat <<INFO
 $SCRIPTNAME $VERSION - A utility script for USTB web.
 
-Copyright  2020-2024	Shuaicheng Zhu <jason23347@gmail.com>
+Copyright  2020-2025	Shuaicheng Zhu <jason23347@gmail.com>
 
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
@@ -151,7 +151,7 @@ ustb_login() {
 	fi
 
 	# Fetch IPV6 address
-	[[ "$ATTEMPT_IPV6" -gt 1 ]] && {
+	if [ "$ATTEMPT_IPV6" -ge 1 ]; then
 		printf "\nfetching IPV6 address..."
 		if [ -n "$DEFAULT_IPV6_ADDRESS" ]; then
 			ip_addr="$DEFAULT_IPV6_ADDRESS"
@@ -161,7 +161,7 @@ ustb_login() {
 				sed "s/.*= '//;s/';.*//")
 		fi
 		printf "$ip_addr.\n"
-	}
+	fi
 
 	# Do login
 	params="callback=suibian&DDDDD=$username&upass=$password&0MKKey=123456&v6ip=$ip_addr"
