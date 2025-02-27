@@ -53,26 +53,28 @@ INFO
 }
 
 ustb_fee() {
+	# 校园网计费相关通知链接：https://mp.weixin.qq.com/s/jCoyTvUAFcYFUgV4mdVj-g
+	# 网费价格取 0.6120 元/GB，理由详见 fee.md
+
+	local fee
+	local cost
+
 	local res=$(curl -s $LOGIN_HOST)
 
-	# Default color
-	local COLOR_FEE="\033[0m"
-	local COLOR_="\033[0m"
-
 	# cost
-	local flow=$(echo "$res" | grep ";flow=" |
-		sed "s/.*flow='//;s/[[:space:]].*//")
-	local cost
+	local flow=$(echo "$res" | grep ";flow=" | sed "s/.*flow='//;s/'.*//")
+
 	# First 120G free
-	if [ $(echo "$flow <= 120000000" | bc) -eq 1 ]; then
+	# 125829120 = 120 * 1024 * 1024
+	if [ $(echo "$flow <= 125829120" | bc) -eq 1 ]; then
 		cost=0
 	else
-		cost=$(echo "scale=2; ($flow / 1000000 - 120) * 0.6" | bc)
+		# 1048576 = 1024 * 1024
+		cost=$(awk -v flow="$flow" 'BEGIN { printf "%.2f\n", (flow / 1048576 - 120) * 0.6120 }')
 	fi
 
 	# fee
-	local fee=$(echo "$res" | grep 'fee=' |
-		sed "s/.*fee='//;s/[[:space:]].*//")
+	fee=$(echo "$res" | grep 'fee=' | sed "s/.*fee='//;s/'.*//")
 	fee=$(echo "scale=2;$fee/10000" | bc)
 
 	# set color
